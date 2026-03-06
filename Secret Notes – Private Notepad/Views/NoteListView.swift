@@ -235,6 +235,18 @@ struct NoteCardView: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
+                case .spreadsheet:
+                    let data = note.spreadsheetData
+                    Text("\(data.rows.count) rows x \(data.columns.count) columns")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                case .audio:
+                    HStack(spacing: 4) {
+                        Image(systemName: "waveform")
+                        Text("Audio Note")
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                 default:
                     if let text = note.text, !text.isEmpty {
                         Text(text)

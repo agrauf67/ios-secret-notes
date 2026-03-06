@@ -7,6 +7,8 @@ final class SecretNote {
     var title: String = ""
     var text: String?
     var itemsJSON: String?
+    var spreadsheetJSON: String?
+    var audioFilePath: String?
     var noteTypeRaw: String = NoteType.text.rawValue
     var overallRating: Double = 0.0
     var isPinned: Bool = false
@@ -33,6 +35,17 @@ final class SecretNote {
         set {
             let data = try? JSONEncoder().encode(newValue)
             itemsJSON = data.flatMap { String(data: $0, encoding: .utf8) }
+        }
+    }
+
+    var spreadsheetData: SpreadsheetData {
+        get {
+            guard let json = spreadsheetJSON?.data(using: .utf8) else { return SpreadsheetData() }
+            return (try? JSONDecoder().decode(SpreadsheetData.self, from: json)) ?? SpreadsheetData()
+        }
+        set {
+            let data = try? JSONEncoder().encode(newValue)
+            spreadsheetJSON = data.flatMap { String(data: $0, encoding: .utf8) }
         }
     }
 

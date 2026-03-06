@@ -106,7 +106,19 @@ struct NoteDetailView: View {
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-        default:
+        case .spreadsheet:
+            SpreadsheetDisplayView(data: note.spreadsheetData)
+        case .audio:
+            if let path = note.audioFilePath {
+                AudioPlayerView(filePath: path)
+            }
+            if let text = note.text, !text.isEmpty {
+                Text(text)
+                    .font(.body)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        case .text:
             if let text = note.text, !text.isEmpty {
                 Text(text)
                     .font(.body)

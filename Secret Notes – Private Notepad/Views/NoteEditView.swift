@@ -24,6 +24,8 @@ struct NoteEditView: View {
     @State private var rating: Double = 0.0
     @State private var isPinned: Bool = false
     @State private var checklistItems: [ChecklistItem] = []
+    @State private var spreadsheetData: SpreadsheetData = SpreadsheetData()
+    @State private var audioFilePath: String?
     @State private var selectedCategories: Set<PersistentIdentifier> = []
     @State private var selectedFolder: Folder?
     @State private var noteColorHex: String?
@@ -61,7 +63,7 @@ struct NoteEditView: View {
 
                 if isNewNote {
                     Picker("Type", selection: $noteType) {
-                        ForEach([NoteType.text, .checklist, .markdown], id: \.self) { type in
+                        ForEach(NoteType.allCases, id: \.self) { type in
                             Label(type.displayName, systemImage: type.iconName).tag(type)
                         }
                     }
@@ -83,10 +85,18 @@ struct NoteEditView: View {
                     MarkdownEditorView(text: $text)
                         .frame(minHeight: 300)
                 }
-            default:
-                Section("Content") {
-                    TextEditor(text: $text)
+            case .spreadsheet:
+                Section("Table") {
+                    SpreadsheetEditorView(data: $spreadsheetData)
                         .frame(minHeight: 200)
+                }
+            case .audio:
+                Section("Recording") {
+                    AudioRecorderView(audioFilePath: $audioFilePath)
+                }
+                Section("Transcript / Notes") {
+                    TextEditor(text: $text)
+                        .frame(minHeight: 100)
                 }
             }
 
@@ -187,6 +197,8 @@ struct NoteEditView: View {
                 rating = note.overallRating
                 isPinned = note.isPinned
                 checklistItems = note.checklistItems
+                spreadsheetData = note.spreadsheetData
+                audioFilePath = note.audioFilePath
                 noteColorHex = note.colorHex
                 selectedCategories = Set(note.categories.map(\.persistentModelID))
                 selectedFolder = note.folder
@@ -204,6 +216,8 @@ struct NoteEditView: View {
             note.overallRating = rating
             note.isPinned = isPinned
             note.checklistItems = checklistItems
+            note.spreadsheetData = spreadsheetData
+            note.audioFilePath = audioFilePath
             note.colorHex = noteColorHex
             note.categories = resolvedCategories
             note.folder = selectedFolder
@@ -213,6 +227,8 @@ struct NoteEditView: View {
             note.overallRating = rating
             note.isPinned = isPinned
             note.checklistItems = checklistItems
+            note.spreadsheetData = spreadsheetData
+            note.audioFilePath = audioFilePath
             note.colorHex = noteColorHex
             note.categories = resolvedCategories
             note.folder = selectedFolder

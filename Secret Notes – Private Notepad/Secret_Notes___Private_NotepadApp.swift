@@ -13,7 +13,7 @@ struct Secret_Notes___Private_NotepadApp: App {
                 .environment(authManager)
                 .environment(appSettings)
         }
-        .modelContainer(for: [SecretNote.self, Category.self, Folder.self])
+        .modelContainer(for: [SecretNote.self, Category.self, Folder.self, NoteAttachment.self])
         .onChange(of: scenePhase) { _, newPhase in
             switch newPhase {
             case .active:
