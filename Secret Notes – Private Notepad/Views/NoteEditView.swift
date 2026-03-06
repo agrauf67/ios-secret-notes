@@ -26,6 +26,7 @@ struct NoteEditView: View {
     @State private var checklistItems: [ChecklistItem] = []
     @State private var selectedCategories: Set<PersistentIdentifier> = []
     @State private var selectedFolder: Folder?
+    @State private var noteColorHex: String?
     @State private var showingDiscardAlert = false
 
     private var isNewNote: Bool {
@@ -119,6 +120,30 @@ struct NoteEditView: View {
                 }
             }
 
+            Section("Color") {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(NoteColor.allCases) { noteColor in
+                            Circle()
+                                .fill(noteColor.color ?? .clear)
+                                .stroke(noteColorHex == noteColor.rawValue || (noteColorHex == nil && noteColor == .none) ? Color.primary : Color.clear, lineWidth: 2)
+                                .frame(width: 32, height: 32)
+                                .overlay {
+                                    if noteColor == .none {
+                                        Image(systemName: "xmark")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .onTapGesture {
+                                    noteColorHex = noteColor.rawValue.isEmpty ? nil : noteColor.rawValue
+                                }
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+
             Section("Rating") {
                 RatingInputView(rating: $rating)
             }
@@ -162,6 +187,7 @@ struct NoteEditView: View {
                 rating = note.overallRating
                 isPinned = note.isPinned
                 checklistItems = note.checklistItems
+                noteColorHex = note.colorHex
                 selectedCategories = Set(note.categories.map(\.persistentModelID))
                 selectedFolder = note.folder
             }
@@ -178,6 +204,7 @@ struct NoteEditView: View {
             note.overallRating = rating
             note.isPinned = isPinned
             note.checklistItems = checklistItems
+            note.colorHex = noteColorHex
             note.categories = resolvedCategories
             note.folder = selectedFolder
             note.updatedAt = Date()
@@ -186,6 +213,7 @@ struct NoteEditView: View {
             note.overallRating = rating
             note.isPinned = isPinned
             note.checklistItems = checklistItems
+            note.colorHex = noteColorHex
             note.categories = resolvedCategories
             note.folder = selectedFolder
             modelContext.insert(note)

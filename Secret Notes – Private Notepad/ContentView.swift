@@ -7,6 +7,7 @@ enum AppTab: String, CaseIterable {
     case folders = "Folders"
     case trash = "Trash"
     case archive = "Archive"
+    case settings = "Settings"
 
     var iconName: String {
         switch self {
@@ -15,12 +16,14 @@ enum AppTab: String, CaseIterable {
         case .folders: "folder"
         case .trash: "trash"
         case .archive: "archivebox"
+        case .settings: "gearshape"
         }
     }
 }
 
 struct ContentView: View {
     @Environment(AuthenticationManager.self) private var authManager
+    @Environment(AppSettings.self) private var settings
     @State private var selectedTab: AppTab = .notes
 
     var body: some View {
@@ -36,12 +39,14 @@ struct ContentView: View {
                     .tag(tab)
                 }
             }
+            .tint(settings.colorTheme.accentColor)
             .opacity(authManager.isLocked ? 0 : 1)
 
             if authManager.isLocked {
                 LockScreenView()
             }
         }
+        .preferredColorScheme(settings.themeMode.colorScheme)
     }
 
     @ViewBuilder
@@ -57,6 +62,8 @@ struct ContentView: View {
             TrashView()
         case .archive:
             ArchiveView()
+        case .settings:
+            SettingsView()
         }
     }
 }
@@ -64,5 +71,6 @@ struct ContentView: View {
 #Preview {
     ContentView()
         .environment(AuthenticationManager())
+        .environment(AppSettings())
         .modelContainer(for: [SecretNote.self, Category.self, Folder.self], inMemory: true)
 }
