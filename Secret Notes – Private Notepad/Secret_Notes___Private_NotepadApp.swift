@@ -5,6 +5,7 @@ import SwiftData
 struct Secret_Notes___Private_NotepadApp: App {
     @State private var authManager = AuthenticationManager()
     @State private var appSettings = AppSettings()
+    @State private var storeManager = StoreManager()
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
@@ -12,6 +13,10 @@ struct Secret_Notes___Private_NotepadApp: App {
             ContentView()
                 .environment(authManager)
                 .environment(appSettings)
+                .environment(storeManager)
+                .task {
+                    await storeManager.loadProducts()
+                }
         }
         .modelContainer(for: [SecretNote.self, Category.self, Folder.self, NoteAttachment.self, NoteHistory.self])
         .onChange(of: scenePhase) { _, newPhase in

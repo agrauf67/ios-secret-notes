@@ -4,6 +4,7 @@ import LocalAuthentication
 struct SettingsView: View {
     @Environment(AuthenticationManager.self) private var authManager
     @Environment(AppSettings.self) private var settings
+    @Environment(StoreManager.self) private var storeManager
 
     @State private var showingPinSetup = false
     @State private var showingPinRemove = false
@@ -107,6 +108,23 @@ struct SettingsView: View {
             Section("Note History") {
                 Stepper("History Limit: \(settings.historyLimit)", value: $settings.historyLimit, in: 5...200, step: 5)
             }
+
+            Section("Tools") {
+                NavigationLink {
+                    PasswordGeneratorView()
+                } label: {
+                    Label("Password Generator", systemImage: "key")
+                }
+            }
+
+            #if DEBUG
+            Section("Debug") {
+                Toggle("Pro Override", isOn: Binding(
+                    get: { storeManager.debugProOverride },
+                    set: { storeManager.debugProOverride = $0 }
+                ))
+            }
+            #endif
         }
         .navigationTitle("Settings")
         .sheet(isPresented: $showingPinSetup) {

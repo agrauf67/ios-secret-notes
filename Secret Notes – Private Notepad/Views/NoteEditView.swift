@@ -29,6 +29,7 @@ struct NoteEditView: View {
     @State private var selectedCategories: Set<PersistentIdentifier> = []
     @State private var selectedFolder: Folder?
     @State private var noteColorHex: String?
+    @State private var reminderTime: Date?
     @State private var showingDiscardAlert = false
 
     private var isNewNote: Bool {
@@ -158,6 +159,10 @@ struct NoteEditView: View {
                 RatingInputView(rating: $rating)
             }
 
+            Section("Reminder") {
+                ReminderPickerView(reminderTime: $reminderTime)
+            }
+
             Section {
                 Toggle("Pinned", isOn: $isPinned)
             }
@@ -200,6 +205,7 @@ struct NoteEditView: View {
                 spreadsheetData = note.spreadsheetData
                 audioFilePath = note.audioFilePath
                 noteColorHex = note.colorHex
+                reminderTime = note.reminderTime
                 selectedCategories = Set(note.categories.map(\.persistentModelID))
                 selectedFolder = note.folder
             }
@@ -222,9 +228,11 @@ struct NoteEditView: View {
             note.spreadsheetData = spreadsheetData
             note.audioFilePath = audioFilePath
             note.colorHex = noteColorHex
+            note.reminderTime = reminderTime
             note.categories = resolvedCategories
             note.folder = selectedFolder
             note.updatedAt = Date()
+            scheduleReminder(for: note)
         } else {
             let note = SecretNote(title: trimmedTitle, text: text.isEmpty ? nil : text, noteType: noteType)
             note.overallRating = rating
@@ -233,9 +241,19 @@ struct NoteEditView: View {
             note.spreadsheetData = spreadsheetData
             note.audioFilePath = audioFilePath
             note.colorHex = noteColorHex
+            note.reminderTime = reminderTime
             note.categories = resolvedCategories
             note.folder = selectedFolder
             modelContext.insert(note)
+            scheduleReminder(for: note)
+        }
+    }
+
+    private func scheduleReminder(for note: SecretNote) {
+        if note.reminderTime != nil {
+            ReminderScheduler.schedule(for: note)
+        } else {
+            ReminderScheduler.cancel(for: note)
         }
     }
 }
