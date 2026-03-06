@@ -20,18 +20,26 @@ enum AppTab: String, CaseIterable {
 }
 
 struct ContentView: View {
+    @Environment(AuthenticationManager.self) private var authManager
     @State private var selectedTab: AppTab = .notes
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            ForEach(AppTab.allCases, id: \.self) { tab in
-                NavigationStack {
-                    tabContent(for: tab)
+        ZStack {
+            TabView(selection: $selectedTab) {
+                ForEach(AppTab.allCases, id: \.self) { tab in
+                    NavigationStack {
+                        tabContent(for: tab)
+                    }
+                    .tabItem {
+                        Label(tab.rawValue, systemImage: tab.iconName)
+                    }
+                    .tag(tab)
                 }
-                .tabItem {
-                    Label(tab.rawValue, systemImage: tab.iconName)
-                }
-                .tag(tab)
+            }
+            .opacity(authManager.isLocked ? 0 : 1)
+
+            if authManager.isLocked {
+                LockScreenView()
             }
         }
     }
@@ -55,5 +63,6 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+        .environment(AuthenticationManager())
         .modelContainer(for: [SecretNote.self, Category.self, Folder.self], inMemory: true)
 }
