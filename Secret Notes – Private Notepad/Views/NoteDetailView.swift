@@ -9,6 +9,7 @@ struct NoteDetailView: View {
 
     @State private var showingEditView = false
     @State private var showingDeleteAlert = false
+    @State private var showingHistory = false
 
     var body: some View {
         ScrollView {
@@ -58,6 +59,12 @@ struct NoteDetailView: View {
                     }
 
                     Button {
+                        showingHistory = true
+                    } label: {
+                        Label("History", systemImage: "clock.arrow.circlepath")
+                    }
+
+                    Button {
                         note.isArchived = true
                         note.updatedAt = Date()
                         dismiss()
@@ -79,6 +86,9 @@ struct NoteDetailView: View {
         }
         .navigationDestination(isPresented: $showingEditView) {
             NoteEditView(mode: .edit(note))
+        }
+        .navigationDestination(isPresented: $showingHistory) {
+            NoteHistoryView(note: note)
         }
         .alert("Delete Note", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}

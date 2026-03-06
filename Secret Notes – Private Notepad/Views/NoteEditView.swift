@@ -211,6 +211,9 @@ struct NoteEditView: View {
         let resolvedCategories = allCategories.filter { selectedCategories.contains($0.persistentModelID) }
 
         if let note = existingNote {
+            let snapshot = NoteHistory(from: note)
+            modelContext.insert(snapshot)
+
             note.title = trimmedTitle
             note.text = text.isEmpty ? nil : text
             note.overallRating = rating

@@ -5,6 +5,7 @@ enum AppTab: String, CaseIterable {
     case notes = "Notes"
     case categories = "Categories"
     case folders = "Folders"
+    case data = "Data"
     case trash = "Trash"
     case archive = "Archive"
     case settings = "Settings"
@@ -14,6 +15,7 @@ enum AppTab: String, CaseIterable {
         case .notes: "note.text"
         case .categories: "tag"
         case .folders: "folder"
+        case .data: "square.and.arrow.up.on.square"
         case .trash: "trash"
         case .archive: "archivebox"
         case .settings: "gearshape"
@@ -58,6 +60,8 @@ struct ContentView: View {
             CategoryManagerView()
         case .folders:
             FolderManagerView()
+        case .data:
+            DataExportView()
         case .trash:
             TrashView()
         case .archive:
