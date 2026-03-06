@@ -3,7 +3,7 @@ import SwiftData
 
 @Model
 final class NoteHistory {
-    var noteId: PersistentIdentifier?
+    var noteSyncId: UUID = UUID()
     var title: String = ""
     var text: String?
     var itemsJSON: String?
@@ -15,7 +15,7 @@ final class NoteHistory {
     var createdAt: Date = Date()
 
     init(from note: SecretNote) {
-        self.noteId = note.persistentModelID
+        self.noteSyncId = note.syncId
         self.title = note.title
         self.text = note.text
         self.itemsJSON = note.itemsJSON

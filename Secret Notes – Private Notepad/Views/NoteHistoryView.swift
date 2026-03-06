@@ -11,7 +11,7 @@ struct NoteHistoryView: View {
 
     private var history: [NoteHistory] {
         allHistory
-            .filter { $0.noteId == note.persistentModelID }
+            .filter { $0.noteSyncId == note.syncId }
             .sorted { $0.createdAt > $1.createdAt }
     }
 

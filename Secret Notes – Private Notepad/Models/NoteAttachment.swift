@@ -10,7 +10,7 @@ enum AttachmentType: String, Codable {
 
 @Model
 final class NoteAttachment {
-    var noteId: PersistentIdentifier?
+    var noteSyncId: UUID = UUID()
     var filePath: String = ""
     var mimeType: String = ""
     var originalFileName: String = ""
@@ -23,7 +23,8 @@ final class NoteAttachment {
         set { attachmentTypeRaw = newValue.rawValue }
     }
 
-    init(filePath: String, mimeType: String, originalFileName: String, fileSize: Int64, attachmentType: AttachmentType) {
+    init(noteSyncId: UUID, filePath: String, mimeType: String, originalFileName: String, fileSize: Int64, attachmentType: AttachmentType) {
+        self.noteSyncId = noteSyncId
         self.filePath = filePath
         self.mimeType = mimeType
         self.originalFileName = originalFileName
