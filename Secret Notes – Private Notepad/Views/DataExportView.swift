@@ -48,6 +48,14 @@ struct DataExportView: View {
                 }
             }
 
+            Section("Sync") {
+                NavigationLink {
+                    DeviceSyncView()
+                } label: {
+                    Label("Device-to-Device Sync", systemImage: "arrow.triangle.2.circlepath")
+                }
+            }
+
             if !statusMessage.isEmpty {
                 Section {
                     Text(statusMessage)
