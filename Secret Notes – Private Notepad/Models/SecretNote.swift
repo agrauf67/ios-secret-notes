@@ -17,6 +17,9 @@ final class SecretNote {
     var createdAt: Date = Date()
     var updatedAt: Date = Date()
 
+    var categories: [Category] = []
+    var folder: Folder?
+
     var noteType: NoteType {
         get { NoteType(rawValue: noteTypeRaw) ?? .text }
         set { noteTypeRaw = newValue.rawValue }

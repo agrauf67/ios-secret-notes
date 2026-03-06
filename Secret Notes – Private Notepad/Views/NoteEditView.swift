@@ -10,6 +10,12 @@ struct NoteEditView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
+    @Query(filter: #Predicate<Category> { !$0.isDeleted }, sort: \Category.name)
+    private var allCategories: [Category]
+
+    @Query(filter: #Predicate<Folder> { !$0.isDeleted }, sort: \Folder.name)
+    private var allFolders: [Folder]
+
     let mode: NoteEditMode
 
     @State private var title: String = ""
@@ -18,6 +24,8 @@ struct NoteEditView: View {
     @State private var rating: Double = 0.0
     @State private var isPinned: Bool = false
     @State private var checklistItems: [ChecklistItem] = []
+    @State private var selectedCategories: Set<PersistentIdentifier> = []
+    @State private var selectedFolder: Folder?
     @State private var showingDiscardAlert = false
 
     private var isNewNote: Bool {
@@ -32,11 +40,14 @@ struct NoteEditView: View {
 
     private var hasChanges: Bool {
         if let note = existingNote {
+            let currentCatIds = Set(note.categories.map(\.persistentModelID))
             return title != note.title ||
                    text != (note.text ?? "") ||
                    rating != note.overallRating ||
                    isPinned != note.isPinned ||
-                   checklistItems != note.checklistItems
+                   checklistItems != note.checklistItems ||
+                   selectedCategories != currentCatIds ||
+                   selectedFolder?.persistentModelID != note.folder?.persistentModelID
         }
         return !title.isEmpty || !text.isEmpty || !checklistItems.isEmpty
     }
@@ -75,6 +86,36 @@ struct NoteEditView: View {
                 Section("Content") {
                     TextEditor(text: $text)
                         .frame(minHeight: 200)
+                }
+            }
+
+            Section("Categories") {
+                if allCategories.isEmpty {
+                    Text("No categories yet")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(allCategories) { category in
+                        CategoryToggleRow(
+                            category: category,
+                            isSelected: selectedCategories.contains(category.persistentModelID),
+                            onToggle: {
+                                if selectedCategories.contains(category.persistentModelID) {
+                                    selectedCategories.remove(category.persistentModelID)
+                                } else {
+                                    selectedCategories.insert(category.persistentModelID)
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+
+            Section("Folder") {
+                Picker("Folder", selection: $selectedFolder) {
+                    Text("None").tag(nil as Folder?)
+                    ForEach(allFolders.filter { $0.parent == nil }) { folder in
+                        Text(folder.name).tag(folder as Folder?)
+                    }
                 }
             }
 
@@ -121,25 +162,53 @@ struct NoteEditView: View {
                 rating = note.overallRating
                 isPinned = note.isPinned
                 checklistItems = note.checklistItems
+                selectedCategories = Set(note.categories.map(\.persistentModelID))
+                selectedFolder = note.folder
             }
         }
     }
 
     private func save() {
         let trimmedTitle = title.trimmingCharacters(in: .whitespaces)
+        let resolvedCategories = allCategories.filter { selectedCategories.contains($0.persistentModelID) }
+
         if let note = existingNote {
             note.title = trimmedTitle
             note.text = text.isEmpty ? nil : text
             note.overallRating = rating
             note.isPinned = isPinned
             note.checklistItems = checklistItems
+            note.categories = resolvedCategories
+            note.folder = selectedFolder
             note.updatedAt = Date()
         } else {
             let note = SecretNote(title: trimmedTitle, text: text.isEmpty ? nil : text, noteType: noteType)
             note.overallRating = rating
             note.isPinned = isPinned
             note.checklistItems = checklistItems
+            note.categories = resolvedCategories
+            note.folder = selectedFolder
             modelContext.insert(note)
+        }
+    }
+}
+
+struct CategoryToggleRow: View {
+    let category: Category
+    let isSelected: Bool
+    let onToggle: () -> Void
+
+    var body: some View {
+        Button(action: onToggle) {
+            HStack {
+                Text(category.name)
+                    .foregroundStyle(.primary)
+                Spacer()
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(.tint)
+                }
+            }
         }
     }
 }

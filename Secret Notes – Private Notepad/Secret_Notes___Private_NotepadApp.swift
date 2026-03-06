@@ -7,6 +7,6 @@ struct Secret_Notes___Private_NotepadApp: App {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(for: SecretNote.self)
+        .modelContainer(for: [SecretNote.self, Category.self, Folder.self])
     }
 }
