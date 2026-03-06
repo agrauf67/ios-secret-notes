@@ -93,11 +93,22 @@ struct NoteCardView: View {
                     }
                 }
 
-                if let text = note.text, !text.isEmpty {
-                    Text(text)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(3)
+                switch note.noteType {
+                case .checklist:
+                    let items = note.checklistItems
+                    if !items.isEmpty {
+                        let checked = items.filter(\.isChecked).count
+                        Text("\(checked)/\(items.count) completed")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                default:
+                    if let text = note.text, !text.isEmpty {
+                        Text(text)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(3)
+                    }
                 }
 
                 if note.overallRating > 0 {

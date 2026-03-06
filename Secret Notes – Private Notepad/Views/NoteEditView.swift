@@ -17,6 +17,7 @@ struct NoteEditView: View {
     @State private var noteType: NoteType = .text
     @State private var rating: Double = 0.0
     @State private var isPinned: Bool = false
+    @State private var checklistItems: [ChecklistItem] = []
     @State private var showingDiscardAlert = false
 
     private var isNewNote: Bool {
@@ -34,9 +35,10 @@ struct NoteEditView: View {
             return title != note.title ||
                    text != (note.text ?? "") ||
                    rating != note.overallRating ||
-                   isPinned != note.isPinned
+                   isPinned != note.isPinned ||
+                   checklistItems != note.checklistItems
         }
-        return !title.isEmpty || !text.isEmpty
+        return !title.isEmpty || !text.isEmpty || !checklistItems.isEmpty
     }
 
     var body: some View {
@@ -44,19 +46,40 @@ struct NoteEditView: View {
             Section {
                 TextField("Title", text: $title)
                     .font(.headline)
+
+                if isNewNote {
+                    Picker("Type", selection: $noteType) {
+                        ForEach([NoteType.text, .checklist, .markdown], id: \.self) { type in
+                            Label(type.displayName, systemImage: type.iconName).tag(type)
+                        }
+                    }
+                }
             }
 
-            Section {
-                TextEditor(text: $text)
-                    .frame(minHeight: 200)
-            } header: {
-                Text("Content")
+            switch noteType {
+            case .text:
+                Section("Content") {
+                    TextEditor(text: $text)
+                        .frame(minHeight: 200)
+                }
+            case .checklist:
+                Section("Items") {
+                    ChecklistEditorView(items: $checklistItems)
+                }
+            case .markdown:
+                Section {
+                    MarkdownEditorView(text: $text)
+                        .frame(minHeight: 300)
+                }
+            default:
+                Section("Content") {
+                    TextEditor(text: $text)
+                        .frame(minHeight: 200)
+                }
             }
 
-            Section {
+            Section("Rating") {
                 RatingInputView(rating: $rating)
-            } header: {
-                Text("Rating")
             }
 
             Section {
@@ -97,6 +120,7 @@ struct NoteEditView: View {
                 noteType = note.noteType
                 rating = note.overallRating
                 isPinned = note.isPinned
+                checklistItems = note.checklistItems
             }
         }
     }
@@ -108,11 +132,13 @@ struct NoteEditView: View {
             note.text = text.isEmpty ? nil : text
             note.overallRating = rating
             note.isPinned = isPinned
+            note.checklistItems = checklistItems
             note.updatedAt = Date()
         } else {
             let note = SecretNote(title: trimmedTitle, text: text.isEmpty ? nil : text, noteType: noteType)
             note.overallRating = rating
             note.isPinned = isPinned
+            note.checklistItems = checklistItems
             modelContext.insert(note)
         }
     }

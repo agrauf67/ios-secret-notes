@@ -17,12 +17,7 @@ struct NoteDetailView: View {
                     RatingView(rating: note.overallRating, size: 16)
                 }
 
-                if let text = note.text, !text.isEmpty {
-                    Text(text)
-                        .font(.body)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
+                noteContent
 
                 Spacer()
 
@@ -97,11 +92,47 @@ struct NoteDetailView: View {
         }
     }
 
+    @ViewBuilder
+    private var noteContent: some View {
+        switch note.noteType {
+        case .checklist:
+            let items = note.checklistItems
+            if !items.isEmpty {
+                ChecklistDisplayView(items: items)
+            }
+        case .markdown:
+            if let text = note.text, !text.isEmpty {
+                MarkdownDisplayView(markdown: text)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        default:
+            if let text = note.text, !text.isEmpty {
+                Text(text)
+                    .font(.body)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
     private func copyToClipboard() {
         var content = note.title
-        if let text = note.text, !text.isEmpty {
-            content += "\n\n" + text
+
+        switch note.noteType {
+        case .checklist:
+            let items = note.checklistItems
+            for item in items.sorted(by: { $0.position < $1.position }) {
+                let prefix = item.isParent ? "" : "  "
+                let check = item.isChecked ? "[x]" : "[ ]"
+                content += "\n\(prefix)\(check) \(item.text)"
+            }
+        default:
+            if let text = note.text, !text.isEmpty {
+                content += "\n\n" + text
+            }
         }
+
         UIPasteboard.general.string = content
     }
 }
