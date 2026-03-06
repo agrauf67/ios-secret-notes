@@ -26,8 +26,8 @@ struct NoteEditView: View {
     @State private var checklistItems: [ChecklistItem] = []
     @State private var spreadsheetData: SpreadsheetData = SpreadsheetData()
     @State private var audioFilePath: String?
-    @State private var selectedCategories: Set<PersistentIdentifier> = []
-    @State private var selectedFolder: Folder?
+    @State private var selectedCategoryIds: Set<UUID> = []
+    @State private var selectedFolderId: UUID?
     @State private var noteColorHex: String?
     @State private var reminderTime: Date?
     @State private var showingDiscardAlert = false
@@ -44,14 +44,14 @@ struct NoteEditView: View {
 
     private var hasChanges: Bool {
         if let note = existingNote {
-            let currentCatIds = Set(note.categories.map(\.persistentModelID))
+            let currentCatIds = Set(note.categories.map(\.syncId))
             return title != note.title ||
                    text != (note.text ?? "") ||
                    rating != note.overallRating ||
                    isPinned != note.isPinned ||
                    checklistItems != note.checklistItems ||
-                   selectedCategories != currentCatIds ||
-                   selectedFolder?.persistentModelID != note.folder?.persistentModelID
+                   selectedCategoryIds != currentCatIds ||
+                   selectedFolderId != note.folder?.syncId
         }
         return !title.isEmpty || !text.isEmpty || !checklistItems.isEmpty
     }
@@ -71,50 +71,19 @@ struct NoteEditView: View {
                 }
             }
 
-            switch noteType {
-            case .text:
-                Section("Content") {
-                    TextEditor(text: $text)
-                        .frame(minHeight: 200)
-                }
-            case .checklist:
-                Section("Items") {
-                    ChecklistEditorView(items: $checklistItems)
-                }
-            case .markdown:
-                Section {
-                    MarkdownEditorView(text: $text)
-                        .frame(minHeight: 300)
-                }
-            case .spreadsheet:
-                Section("Table") {
-                    SpreadsheetEditorView(data: $spreadsheetData)
-                        .frame(minHeight: 200)
-                }
-            case .audio:
-                Section("Recording") {
-                    AudioRecorderView(audioFilePath: $audioFilePath)
-                }
-                Section("Transcript / Notes") {
-                    TextEditor(text: $text)
-                        .frame(minHeight: 100)
-                }
-            }
+            noteContentSection
 
-            Section("Categories") {
-                if allCategories.isEmpty {
-                    Text("No categories yet")
-                        .foregroundStyle(.secondary)
-                } else {
+            if !allCategories.isEmpty {
+                Section("Categories") {
                     ForEach(allCategories) { category in
                         CategoryToggleRow(
                             category: category,
-                            isSelected: selectedCategories.contains(category.persistentModelID),
+                            isSelected: selectedCategoryIds.contains(category.syncId),
                             onToggle: {
-                                if selectedCategories.contains(category.persistentModelID) {
-                                    selectedCategories.remove(category.persistentModelID)
+                                if selectedCategoryIds.contains(category.syncId) {
+                                    selectedCategoryIds.remove(category.syncId)
                                 } else {
-                                    selectedCategories.insert(category.persistentModelID)
+                                    selectedCategoryIds.insert(category.syncId)
                                 }
                             }
                         )
@@ -122,11 +91,13 @@ struct NoteEditView: View {
                 }
             }
 
-            Section("Folder") {
-                Picker("Folder", selection: $selectedFolder) {
-                    Text("None").tag(nil as Folder?)
-                    ForEach(allFolders.filter { $0.parent == nil }) { folder in
-                        Text(folder.name).tag(folder as Folder?)
+            if !allFolders.isEmpty {
+                Section("Folder") {
+                    Picker("Folder", selection: $selectedFolderId) {
+                        Text("None").tag(nil as UUID?)
+                        ForEach(allFolders.filter { $0.parent == nil }) { folder in
+                            Text(folder.name).tag(folder.syncId as UUID?)
+                        }
                     }
                 }
             }
@@ -135,9 +106,10 @@ struct NoteEditView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(NoteColor.allCases) { noteColor in
+                            let isSelected = noteColorHex == noteColor.rawValue || (noteColorHex == nil && noteColor == .none)
                             Circle()
                                 .fill(noteColor.color ?? .clear)
-                                .stroke(noteColorHex == noteColor.rawValue || (noteColorHex == nil && noteColor == .none) ? Color.primary : Color.clear, lineWidth: 2)
+                                .stroke(isSelected ? Color.primary : Color.clear, lineWidth: 2)
                                 .frame(width: 32, height: 32)
                                 .overlay {
                                     if noteColor == .none {
@@ -206,15 +178,49 @@ struct NoteEditView: View {
                 audioFilePath = note.audioFilePath
                 noteColorHex = note.colorHex
                 reminderTime = note.reminderTime
-                selectedCategories = Set(note.categories.map(\.persistentModelID))
-                selectedFolder = note.folder
+                selectedCategoryIds = Set(note.categories.map(\.syncId))
+                selectedFolderId = note.folder?.syncId
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var noteContentSection: some View {
+        switch noteType {
+        case .text:
+            Section("Content") {
+                TextEditor(text: $text)
+                    .frame(minHeight: 200)
+            }
+        case .checklist:
+            Section("Items") {
+                ChecklistEditorView(items: $checklistItems)
+            }
+        case .markdown:
+            Section {
+                MarkdownEditorView(text: $text)
+                    .frame(minHeight: 300)
+            }
+        case .spreadsheet:
+            Section("Table") {
+                SpreadsheetEditorView(data: $spreadsheetData)
+                    .frame(minHeight: 200)
+            }
+        case .audio:
+            Section("Recording") {
+                AudioRecorderView(audioFilePath: $audioFilePath)
+            }
+            Section("Transcript / Notes") {
+                TextEditor(text: $text)
+                    .frame(minHeight: 100)
             }
         }
     }
 
     private func save() {
         let trimmedTitle = title.trimmingCharacters(in: .whitespaces)
-        let resolvedCategories = allCategories.filter { selectedCategories.contains($0.persistentModelID) }
+        let resolvedCategories = allCategories.filter { selectedCategoryIds.contains($0.syncId) }
+        let resolvedFolder = allFolders.first { $0.syncId == selectedFolderId }
 
         if let note = existingNote {
             let snapshot = NoteHistory(from: note)
@@ -230,7 +236,7 @@ struct NoteEditView: View {
             note.colorHex = noteColorHex
             note.reminderTime = reminderTime
             note.categories = resolvedCategories
-            note.folder = selectedFolder
+            note.folder = resolvedFolder
             note.updatedAt = Date()
             scheduleReminder(for: note)
         } else {
@@ -243,7 +249,7 @@ struct NoteEditView: View {
             note.colorHex = noteColorHex
             note.reminderTime = reminderTime
             note.categories = resolvedCategories
-            note.folder = selectedFolder
+            note.folder = resolvedFolder
             modelContext.insert(note)
             scheduleReminder(for: note)
         }

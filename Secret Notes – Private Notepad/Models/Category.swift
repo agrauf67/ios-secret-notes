@@ -3,6 +3,7 @@ import SwiftData
 
 @Model
 final class Category {
+    var syncId: UUID = UUID()
     var name: String = ""
     var isDeleted: Bool = false
     var isArchived: Bool = false
