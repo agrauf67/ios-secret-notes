@@ -11,10 +11,23 @@ Secret Notes is an iOS clone of the Android app `de.djvlk.secretnotes`. It's a f
 - **Swift Version**: 5.0
 - **No external dependencies** — uses only Apple frameworks (SwiftUI, SwiftData, CryptoKit, LocalAuthentication, MultipeerConnectivity, StoreKit, AVFoundation, UserNotifications)
 
+## Important: File Paths
+
+The project and source directory names contain an **em dash** (`–`, U+2013), not a hyphen:
+- Project: `Secret Notes – Private Notepad.xcodeproj`
+- Source: `Secret Notes – Private Notepad/`
+
+Use tab-completion or copy-paste to avoid path errors.
+
 ## Build
 
 ```bash
 xcodebuild -project "Secret Notes – Private Notepad.xcodeproj" -scheme "Secret Notes – Private Notepad" -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
+```
+
+Clean build:
+```bash
+xcodebuild -project "Secret Notes – Private Notepad.xcodeproj" -scheme "Secret Notes – Private Notepad" clean
 ```
 
 No test targets exist yet.
@@ -24,27 +37,29 @@ No test targets exist yet.
 SwiftUI app with `@Observable` pattern (not MVVM with ViewModels — state is managed via SwiftData `@Query` and `@Environment`).
 
 ### Entry Point & Navigation
-- `Secret_Notes___Private_NotepadApp.swift` — `@main`, sets up SwiftData container and environment objects (AuthenticationManager, AppSettings, StoreManager)
+- `Secret_Notes___Private_NotepadApp.swift` — `@main`, sets up SwiftData container with 5 models (SecretNote, Category, Folder, NoteAttachment, NoteHistory) and environment objects (AuthenticationManager, AppSettings, StoreManager). Handles scene phase for auto-lock.
 - `ContentView.swift` — TabView with 7 tabs: Notes, Categories, Folders, Data, Trash, Archive, Settings. Lock screen overlay when locked.
 
 ### Data Layer (SwiftData Models in `Models/`)
-- `SecretNote` — main entity with title, text, itemsJSON, spreadsheetJSON, audioFilePath, noteType, rating, pin, delete/archive flags, color, reminder, relationships to Category/Folder
+- `SecretNote` — main entity with title, text, itemsJSON, spreadsheetJSON, audioFilePath, noteType, rating, pin, delete/archive flags, color, reminder, relationships to Category/Folder. Uses `syncId: UUID` for P2P sync identity.
 - `Category` — many-to-many with SecretNote
 - `Folder` — hierarchical (self-referencing parent), one-to-many with SecretNote
 - `NoteAttachment` — file attachment metadata
 - `NoteHistory` — version snapshots created on each save
 - Checklist/Spreadsheet data stored as JSON strings in SecretNote, decoded via computed properties
+- `AppSettings` — `@Observable` class wrapping UserDefaults for all UI preferences
+- `StoreManager` — StoreKit 2 in-app purchase management (pro entitlements)
 
 ### Note Types
 5 types: TEXT, CHECKLIST, SPREADSHEET, MARKDOWN, AUDIO — each has dedicated editor and display views in `Views/`.
 
 ### Security (`Security/`)
 - `AuthenticationManager` — PIN (SHA-256 hashed) and biometric (Face ID/Touch ID) auth, auto-lock with configurable timeout
-- `EncryptionManager` — AES-GCM encryption with Keychain-stored DEK, format `v1:<b64(nonce)>:<b64(ct+tag)>`
+- `EncryptionManager` — Singleton. AES-GCM encryption with Keychain-stored DEK, format `v1:<b64(nonce)>:<b64(ct+tag)>`
 - `LockScreenView` — PIN keypad and biometric unlock UI
 
 ### Sync (`Sync/`)
-- `DeviceSyncManager` — MultipeerConnectivity P2P sync with MCSession, delta sync via syncId/timestamps
+- `DeviceSyncManager` — MultipeerConnectivity P2P sync with MCSession, delta sync via syncId/timestamps. Uses `SyncNote` struct (excludes audio files) and `SyncManifest` for delta exchange.
 
 ### Key Patterns
 - Soft delete: `isDeleted`/`isArchived` flags, filtered via `#Predicate` in `@Query`
@@ -53,4 +68,4 @@ SwiftUI app with `@Observable` pattern (not MVVM with ViewModels — state is ma
 - Color hex strings converted via `Color(hex:)` extension in FolderManagerView
 
 ### Localization
-English (primary) and German via `Localizable.xcstrings`.
+English (primary) and German via `Localizable.xcstrings` (Xcode 15+ JSON string catalog format).
