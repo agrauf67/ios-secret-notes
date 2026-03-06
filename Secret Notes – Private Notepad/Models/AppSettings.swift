@@ -4,57 +4,61 @@ import SwiftUI
 @Observable
 final class AppSettings {
     var sortOrder: SortOrder {
-        get { SortOrder(rawValue: UserDefaults.standard.string(forKey: "sortOrder") ?? "") ?? .byDate }
-        set { UserDefaults.standard.set(newValue.rawValue, forKey: "sortOrder") }
+        didSet { UserDefaults.standard.set(sortOrder.rawValue, forKey: "sortOrder") }
     }
 
     var sortDirection: SortDirection {
-        get { SortDirection(rawValue: UserDefaults.standard.string(forKey: "sortDirection") ?? "") ?? .descending }
-        set { UserDefaults.standard.set(newValue.rawValue, forKey: "sortDirection") }
+        didSet { UserDefaults.standard.set(sortDirection.rawValue, forKey: "sortDirection") }
     }
 
     var themeMode: ThemeMode {
-        get { ThemeMode(rawValue: UserDefaults.standard.string(forKey: "themeMode") ?? "") ?? .system }
-        set { UserDefaults.standard.set(newValue.rawValue, forKey: "themeMode") }
+        didSet { UserDefaults.standard.set(themeMode.rawValue, forKey: "themeMode") }
     }
 
     var colorTheme: ColorTheme {
-        get { ColorTheme(rawValue: UserDefaults.standard.string(forKey: "colorTheme") ?? "") ?? .green }
-        set { UserDefaults.standard.set(newValue.rawValue, forKey: "colorTheme") }
+        didSet { UserDefaults.standard.set(colorTheme.rawValue, forKey: "colorTheme") }
     }
 
     var showText: Bool {
-        get { UserDefaults.standard.object(forKey: "showText") as? Bool ?? true }
-        set { UserDefaults.standard.set(newValue, forKey: "showText") }
+        didSet { UserDefaults.standard.set(showText, forKey: "showText") }
     }
 
     var showRating: Bool {
-        get { UserDefaults.standard.object(forKey: "showRating") as? Bool ?? true }
-        set { UserDefaults.standard.set(newValue, forKey: "showRating") }
+        didSet { UserDefaults.standard.set(showRating, forKey: "showRating") }
     }
 
     var showCategory: Bool {
-        get { UserDefaults.standard.object(forKey: "showCategory") as? Bool ?? true }
-        set { UserDefaults.standard.set(newValue, forKey: "showCategory") }
+        didSet { UserDefaults.standard.set(showCategory, forKey: "showCategory") }
     }
 
     var showFolders: Bool {
-        get { UserDefaults.standard.object(forKey: "showFolders") as? Bool ?? true }
-        set { UserDefaults.standard.set(newValue, forKey: "showFolders") }
+        didSet { UserDefaults.standard.set(showFolders, forKey: "showFolders") }
     }
 
     var showCreatedUpdated: Bool {
-        get { UserDefaults.standard.object(forKey: "showCreatedUpdated") as? Bool ?? true }
-        set { UserDefaults.standard.set(newValue, forKey: "showCreatedUpdated") }
+        didSet { UserDefaults.standard.set(showCreatedUpdated, forKey: "showCreatedUpdated") }
     }
 
     var maxPreviewLines: Int {
-        get { UserDefaults.standard.object(forKey: "maxLines") as? Int ?? 3 }
-        set { UserDefaults.standard.set(newValue, forKey: "maxLines") }
+        didSet { UserDefaults.standard.set(maxPreviewLines, forKey: "maxLines") }
     }
 
     var historyLimit: Int {
-        get { UserDefaults.standard.object(forKey: "historyLimit") as? Int ?? 50 }
-        set { UserDefaults.standard.set(newValue, forKey: "historyLimit") }
+        didSet { UserDefaults.standard.set(historyLimit, forKey: "historyLimit") }
+    }
+
+    init() {
+        let defaults = UserDefaults.standard
+        self.sortOrder = SortOrder(rawValue: defaults.string(forKey: "sortOrder") ?? "") ?? .byDate
+        self.sortDirection = SortDirection(rawValue: defaults.string(forKey: "sortDirection") ?? "") ?? .descending
+        self.themeMode = ThemeMode(rawValue: defaults.string(forKey: "themeMode") ?? "") ?? .system
+        self.colorTheme = ColorTheme(rawValue: defaults.string(forKey: "colorTheme") ?? "") ?? .green
+        self.showText = defaults.object(forKey: "showText") as? Bool ?? true
+        self.showRating = defaults.object(forKey: "showRating") as? Bool ?? true
+        self.showCategory = defaults.object(forKey: "showCategory") as? Bool ?? true
+        self.showFolders = defaults.object(forKey: "showFolders") as? Bool ?? true
+        self.showCreatedUpdated = defaults.object(forKey: "showCreatedUpdated") as? Bool ?? true
+        self.maxPreviewLines = defaults.object(forKey: "maxLines") as? Int ?? 3
+        self.historyLimit = defaults.object(forKey: "historyLimit") as? Int ?? 50
     }
 }
