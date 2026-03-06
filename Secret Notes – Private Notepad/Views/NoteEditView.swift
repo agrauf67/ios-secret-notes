@@ -31,6 +31,7 @@ struct NoteEditView: View {
     @State private var noteColorHex: String?
     @State private var reminderTime: Date?
     @State private var showingDiscardAlert = false
+    @State private var isViewReady = false
 
     private var isNewNote: Bool {
         if case .create = mode { return true }
@@ -57,6 +58,65 @@ struct NoteEditView: View {
     }
 
     var body: some View {
+        Group {
+            if isViewReady {
+                formContent
+            } else {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .task {
+            try? await Task.sleep(for: .milliseconds(50))
+            isViewReady = true
+        }
+        .navigationTitle(isNewNote ? "New Note" : "Edit Note")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") {
+                    if hasChanges {
+                        showingDiscardAlert = true
+                    } else {
+                        dismiss()
+                    }
+                }
+            }
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") {
+                    save()
+                    dismiss()
+                }
+                .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+        .alert("Discard Changes?", isPresented: $showingDiscardAlert) {
+            Button("Keep Editing", role: .cancel) {}
+            Button("Discard", role: .destructive) { dismiss() }
+        } message: {
+            Text("You have unsaved changes that will be lost.")
+        }
+        .onAppear {
+            if let note = existingNote {
+                title = note.title
+                text = note.text ?? ""
+                noteType = note.noteType
+                rating = note.overallRating
+                isPinned = note.isPinned
+                checklistItems = note.checklistItems
+                spreadsheetData = note.spreadsheetData
+                audioFilePath = note.audioFilePath
+                noteColorHex = note.colorHex
+                reminderTime = note.reminderTime
+                selectedCategoryIds = Set(note.categories.map(\.syncId))
+                selectedFolderId = note.folder?.syncId
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var formContent: some View {
         Form {
             Section {
                 TextField("Title", text: $title)
@@ -137,49 +197,6 @@ struct NoteEditView: View {
 
             Section {
                 Toggle("Pinned", isOn: $isPinned)
-            }
-        }
-        .navigationTitle(isNewNote ? "New Note" : "Edit Note")
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") {
-                    if hasChanges {
-                        showingDiscardAlert = true
-                    } else {
-                        dismiss()
-                    }
-                }
-            }
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Save") {
-                    save()
-                    dismiss()
-                }
-                .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
-            }
-        }
-        .alert("Discard Changes?", isPresented: $showingDiscardAlert) {
-            Button("Keep Editing", role: .cancel) {}
-            Button("Discard", role: .destructive) { dismiss() }
-        } message: {
-            Text("You have unsaved changes that will be lost.")
-        }
-        .onAppear {
-            if let note = existingNote {
-                title = note.title
-                text = note.text ?? ""
-                noteType = note.noteType
-                rating = note.overallRating
-                isPinned = note.isPinned
-                checklistItems = note.checklistItems
-                spreadsheetData = note.spreadsheetData
-                audioFilePath = note.audioFilePath
-                noteColorHex = note.colorHex
-                reminderTime = note.reminderTime
-                selectedCategoryIds = Set(note.categories.map(\.syncId))
-                selectedFolderId = note.folder?.syncId
             }
         }
     }

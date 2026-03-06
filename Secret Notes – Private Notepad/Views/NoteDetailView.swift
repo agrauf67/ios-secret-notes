@@ -84,11 +84,15 @@ struct NoteDetailView: View {
                 }
             }
         }
-        .navigationDestination(isPresented: $showingEditView) {
-            NoteEditView(mode: .edit(note))
+        .sheet(isPresented: $showingEditView) {
+            NavigationStack {
+                NoteEditView(mode: .edit(note))
+            }
         }
-        .navigationDestination(isPresented: $showingHistory) {
-            NoteHistoryView(note: note)
+        .sheet(isPresented: $showingHistory) {
+            NavigationStack {
+                NoteHistoryView(note: note)
+            }
         }
         .alert("Delete Note", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}

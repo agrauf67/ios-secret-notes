@@ -197,8 +197,10 @@ struct NoteListView: View {
                 }
             }
         }
-        .navigationDestination(isPresented: $showingCreateNote) {
-            NoteEditView(mode: .create)
+        .sheet(isPresented: $showingCreateNote) {
+            NavigationStack {
+                NoteEditView(mode: .create)
+            }
         }
     }
 }
